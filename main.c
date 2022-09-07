@@ -1,64 +1,44 @@
 #include "shell.h"
 
 /**
- * main - Entry point of the shell
+ * main - entry point
+ * @ac: arg count
+ * @av: arg vector
  *
- * @ac: Argument count
- * @av: Argument vector
- *
- * Return: the (int)value of status.
+ * Return: 0 on success, 1 on error
  */
 int main(int ac, char **av)
 {
-	cmd_t cmd;
-	(void) ac;
+	info_t info[] = { INFO_INIT };
+	int fd = 2;
 
-	signal(SIGINT, handl_sigint);
-	/*open_console();*/
-	init_cmd(&cmd, av);
-	rep_loop(&cmd);
-	free_cmd(&cmd);
-	return (cmd.status);
-}
+	asm ("mov %1, %0\n\t"
+		"add $3, %0"
+		: "=r" (fd)
+		: "r" (fd));
 
-/**
- * rep_loop - read-eval-print loop of shell
- * @cmd: data relevant (av, input, args)
- *
- * Return: no return.
- */
-void rep_loop(cmd_t *cmd)
-{
-	int loop;
-	int i_eof;
-	char *input;
-
-	loop = 1;
-	while (loop == 1)
+	if (ac == 2)
 	{
-		input =  _readwrite(1, &i_eof);
-		if (i_eof != -1)
+		fd = open(av[1], O_RDONLY);
+		if (fd == -1)
 		{
-			input = handl_comment(input);
-			if (input == NULL)
-				continue;
-
-			if (check_syntax_error(cmd, input) == 1)
+			if (errno == EACCES)
+				exit(126);
+			if (errno == ENOENT)
 			{
-				cmd->status = 2;
-				free(input);
-				continue;
+				_eputs(av[0]);
+				_eputs(": 0: Can't open ");
+				_eputs(av[1]);
+				_eputchar('\n');
+				_eputchar(BUF_FLUSH);
+				exit(127);
 			}
-
-			input = parse_input(input, cmd);
-			loop = apply_seperators(cmd, input);
-			cmd->counter += 1;
-			free(input);
+			return (EXIT_FAILURE);
 		}
-		else
-		{
-			loop = 0;
-			free(input);
-		}
+		info->readfd = fd;
 	}
+	populate_env_list(info);
+	read_history(info);
+	hsh(info, av);
+	return (EXIT_SUCCESS);
 }

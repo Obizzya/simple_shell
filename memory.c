@@ -1,39 +1,18 @@
 #include "shell.h"
 
 /**
- * free_grid - frees a 2 dimensional grid.
- * @grid: multidimensional array of integers.
- * @height: height of the grid.
+ * bfree - frees a pointer and NULLs the address
+ * @ptr: address of the pointer to free
  *
- * Return: no return
+ * Return: 1 if freed, otherwise 0.
  */
-void free_grid(char **grid, int height)
+int bfree(void **ptr)
 {
-	height -= 1;
-
-	if (grid != NULL && height != 0)
+	if (ptr && *ptr)
 	{
-		for (; height >= 0; height--)
-		{
-			free(grid[height]);
-		}
-		free(grid);
+		free(*ptr);
+		*ptr = NULL;
+		return (1);
 	}
-}
-
-/**
- * free_cmd - frees cmd envar
- *
- * @cmd: cmd struct
- * Return: no return
- */
-void free_cmd(cmd_t *cmd)
-{
-	int i;
-
-	for (i = 0; cmd->envar[i]; i++)
-		free(cmd->envar[i]);
-
-	free(cmd->envar);
-	free(cmd->pid);
+	return (0);
 }
